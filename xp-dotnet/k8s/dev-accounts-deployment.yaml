@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xp-dotnet-sqlserver-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: xp-dotnet-sqlserver
+  template:
+    metadata:
+      labels:
+        app: xp-dotnet-sqlserver
+    spec:
+      containers:
+      - name: xp-dotnet-sqlserver
+        image: xp-dotnet-sqlserver:latest
+        imagePullPolicy: Never 
+        ports:
+        - containerPort: 8080
+        envFrom:
+          - configMapRef:
+              name: xp-dotnet-sqlserver-configmap
+        env:
+        - name: SQLSERVER_CONNECTION
+          valueFrom:
+            secretKeyRef:
+              name: xp-dotnet-sqlserver-secrets
+              key: SQLSERVER_CONNECTION
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name

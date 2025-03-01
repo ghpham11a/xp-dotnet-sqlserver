@@ -1,0 +1,6 @@
+@XpDotnetSqlServer_HostAddress = http://localhost:5056
+
+GET {{XpDotnetSqlServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
