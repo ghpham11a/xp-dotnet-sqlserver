@@ -1,7 +1,8 @@
-﻿using Microsoft.Data.SqlClient;
-using System.Security.Principal;
+﻿
+using StackExchange.Redis;
 using XpDotnetSqlServer.Models;
 using XpDotnetSqlServer.Repositories;
+using XpDotnetSqlServer.Utils;
 
 namespace XpDotnetSqlServer.Services
 {
@@ -10,10 +11,21 @@ namespace XpDotnetSqlServer.Services
         private readonly IConfiguration _configuration;
         private readonly IAccountsRepository _accountsRepository;
 
-        public AccountsService(IConfiguration configuration, IAccountsRepository accountsRepository)
+        // Add fields for the additional dependencies
+        private readonly KafkaProducerService _kafkaProducer;
+        private readonly IConnectionMultiplexer _redis;
+
+        public AccountsService(
+            IConfiguration configuration,
+            IAccountsRepository accountsRepository,
+            KafkaProducerService kafkaProducer, 
+            IConnectionMultiplexer redis            
+        )
         {
             _configuration = configuration;
-            _accountsRepository = accountsRepository;   
+            _accountsRepository = accountsRepository;
+            _kafkaProducer = kafkaProducer;
+            _redis = redis;
         }
 
         public async Task<IEnumerable<Account>> GetAllAsync()

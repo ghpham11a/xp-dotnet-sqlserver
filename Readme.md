@@ -58,6 +58,18 @@ Add connection string to dev-accounts-secrets with base64 encoding. Note the pas
 [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('Server=mssql-server-mssql-latest.default.svc.cluster.local,1433;Database=ApplicationDb;User ID=sa;Password=Toughpass1!;TrustServerCertificate=True;'))
 ```
 
+# 3. Create Redis Cache
+
+```
+dotnet add package StackExchange.Redis
+```
+
+# 4. Create Kafka
+
+```
+dotnet add package Confluent.Kafka
+```
+
 # 2. Start server
 
 Setup service to allow outside communication
