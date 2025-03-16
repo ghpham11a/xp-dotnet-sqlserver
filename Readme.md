@@ -1,7 +1,7 @@
 
 # 1. Setup SQL Server
 
-Inside xp-dotnet, install this chart
+Inside xp-sqlserver, install this chart
 
 ```sh
 helm install mssql-server . --set ACCEPT_EULA.value=Y --set MSSQL_PID.value=Developer --set Values.sa_password=mypassword1
@@ -16,7 +16,7 @@ kubectl run sqlcmd-pod -it --rm --image=mcr.microsoft.com/mssql-tools -- bash
 From the side car, authenticate with sqlcmd in the sql server pod. Password was set in xp-sqlserver/values.yaml
 
 ```sh
-sqlcmd -S 10.98.130.97,1433 -U SA -P "Toughpass1!"
+sqlcmd -S 10.111.152.100,1433 -U SA -P "Toughpass1!"
 ```
 
 Create table and add values
@@ -64,10 +64,72 @@ Add connection string to dev-accounts-secrets with base64 encoding. Note the pas
 dotnet add package StackExchange.Redis
 ```
 
+Install Redis Helm chart
+
+```
+helm install xp-redis oci://registry-1.docker.io/bitnamicharts/redis
+```
+
+Optional: connect to Redis
+
+```
+# Store the password in Powershell
+$REDIS_PASSWORD = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String((kubectl get secret --namespace default xp-redis -o jsonpath="{.data.redis-password}")))
+
+# Store the password in Bash
+export REDIS_PASSWORD=$(kubectl get secret --namespace default xp-redis -o jsonpath="{.data.redis-password}" | base64 -d)
+
+kubectl run --namespace default redis-client --restart='Never' --env REDIS_PASSWORD=$REDIS_PASSWORD  --image docker.io/bitnami/redis:7.4.2-debian-12-r4 --command -- sleep infinity
+
+kubectl exec --tty -i redis-client --namespace default -- bash
+
+redis-cli -h xp-redis-master -p 6379
+
+AUTH [REDIS_PASSWORD]
+```
+
 # 4. Create Kafka
 
 ```
 dotnet add package Confluent.Kafka
+```
+
+Install Kafka Helm chart
+
+```
+helm install xp-kafka oci://registry-1.docker.io/bitnamicharts/kafka
+```
+
+To check that pods were spun up
+
+```
+kubectl get pods --selector app.kubernetes.io/instance=xp-kafka
+```
+
+To create the topics, we will start another pod that goes into the Kafka pods and creates the topics and shuts down. To do this, we need to find the Kafka password and update it's value in the dev-kafka-topics-admin.yaml.
+
+```
+# This gets an encoded value
+kubectl get secret xp-kafka-user-passwords -o jsonpath='{.data.client-passwords}'
+
+# we need the decoded version to put into the yaml
+# Powershell
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String((kubectl get secret xp-kafka-user-passwords -o jsonpath='{.data.client-passwords}')))
+
+# bash
+kubectl get secret xp-kafka-user-passwords -o jsonpath='{.data.client-passwords}' | base64 -d
+```
+
+Get the password and update the password field in dev-kafka-topics-admin.yaml
+
+```
+... required username=\"user1\" password=\"bFHKRJA2Y5\";" >> /tmp/kafka-client.properties ...
+```
+
+Then just run this command which applies the yaml updates
+
+```
+kubectl apply -f dev-kafka-topics-admin.yaml
 ```
 
 # 2. Start server

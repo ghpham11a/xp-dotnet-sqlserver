@@ -6,6 +6,8 @@ using XpDotnetSqlServer.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddEnvironmentVariables();
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -16,27 +18,50 @@ builder.Services.AddScoped<IAccountsRepository, AccountsRepository>();
 // 1. Register the ConnectionMultiplexer (the Redis client) as a singleton
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-    var configurationOptions = ConfigurationOptions.Parse(builder.Configuration["Redis:ConnectionString"]);
-    // e.g. "localhost:6379" or "my-redis-server:6379"
-    return ConnectionMultiplexer.Connect(configurationOptions);
+   var redisHost = Environment.GetEnvironmentVariable("REDIS_HOST");
+   var redisPort = Environment.GetEnvironmentVariable("REDIS_PORT");
+   var redisPassword = Environment.GetEnvironmentVariable("REDIS_PASSWORD");
+   var connectionString = $"{redisHost}:{redisPort}";
+
+   // Parse the connection string from configuration, e.g. "localhost:6379"
+   var configurationOptions = ConfigurationOptions.Parse(connectionString);
+
+   // Set the password from configuration (ensure it's stored securely, e.g., in secrets or environment variables)
+   configurationOptions.Password = redisPassword;
+
+   return ConnectionMultiplexer.Connect(configurationOptions);
 });
 
-// Producer
+//// Producer
 builder.Services.AddSingleton(sp =>
 {
-    var bootstrapServers = builder.Configuration["Kafka:BootstrapServers"];
-    return new KafkaProducerService(bootstrapServers);
+   var bootstrapServers = Environment.GetEnvironmentVariable("KAFKA_BOOTSTRAP_SERVERS");
+   var saslUsername = Environment.GetEnvironmentVariable("KAFKA_SASL_USERNAME");
+   var saslPassword = Environment.GetEnvironmentVariable("KAFKA_SASL_PASSWORD");
+
+   var config = new ProducerConfig
+   {
+       BootstrapServers = bootstrapServers,
+       SecurityProtocol = SecurityProtocol.SaslPlaintext,
+       SaslMechanism = SaslMechanism.Plain,                
+       SaslUsername = saslUsername,
+       SaslPassword = saslPassword
+   };
+
+   return new KafkaProducerService(bootstrapServers, saslUsername, saslPassword);
 });
 
 // Consumer as a Hosted Service
 builder.Services.AddHostedService(sp =>
 {
     var logger = sp.GetRequiredService<ILogger<KafkaConsumerService>>();
-    var bootstrapServers = builder.Configuration["Kafka:BootstrapServers"];
-    var topic = builder.Configuration["Kafka:Topic"];
-    var groupId = builder.Configuration["Kafka:GroupId"];
+    var bootstrapServers = Environment.GetEnvironmentVariable("KAFKA_BOOTSTRAP_SERVERS");
+    var topic = Environment.GetEnvironmentVariable("KAFKA_TOPIC");
+    var groupId = Environment.GetEnvironmentVariable("KAFKA_GROUP_ID");
+    var saslUsername = Environment.GetEnvironmentVariable("KAFKA_SASL_USERNAME");
+    var saslPassword = Environment.GetEnvironmentVariable("KAFKA_SASL_PASSWORD");
 
-    return new KafkaConsumerService(logger, bootstrapServers, topic, groupId);
+    return new KafkaConsumerService(logger, bootstrapServers, topic, groupId, saslUsername, saslPassword);
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -52,7 +77,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.UseAuthorization();
 

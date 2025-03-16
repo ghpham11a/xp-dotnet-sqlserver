@@ -7,11 +7,15 @@ namespace XpDotnetSqlServer.Utils
     {
         private readonly IProducer<string, string> _producer;
 
-        public KafkaProducerService(string bootstrapServers)
+        public KafkaProducerService(string bootstrapServers, string username, string password)
         {
             var config = new ProducerConfig
             {
-                BootstrapServers = bootstrapServers
+                BootstrapServers = bootstrapServers,
+                SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                SaslMechanism = SaslMechanism.Plain,
+                SaslUsername = username,
+                SaslPassword = password,
             };
             _producer = new ProducerBuilder<string, string>(config).Build();
         }

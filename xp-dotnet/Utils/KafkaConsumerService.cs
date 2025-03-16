@@ -10,15 +10,20 @@ namespace XpDotnetSqlServer.Utils
         private readonly ConsumerConfig _config;
         private readonly string _topic;
 
-        public KafkaConsumerService(ILogger<KafkaConsumerService> logger, string bootstrapServers, string topic, string groupId)
+        public KafkaConsumerService(ILogger<KafkaConsumerService> logger, string bootstrapServers, string topic, string groupId, string userName, string password)
         {
             _logger = logger;
             _topic = topic;
+
             _config = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
                 GroupId = groupId,
-                AutoOffsetReset = AutoOffsetReset.Earliest
+                AutoOffsetReset = AutoOffsetReset.Earliest,
+                SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                SaslMechanism = SaslMechanism.Plain,
+                SaslUsername = userName,
+                SaslPassword = password
             };
         }
 
@@ -31,14 +36,12 @@ namespace XpDotnetSqlServer.Utils
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    var cr = consumer.Consume(stoppingToken);
-                    _logger.LogInformation($"Received message: {cr.Message.Value} with key: {cr.Message.Key}");
-
-                    // Process the message here
-                    // For example, you could store data in Redis
-
-                    // Manually commit offsets if desired
-                    consumer.Commit(cr);
+                    var cr = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                    if (cr != null)
+                    {
+                        _logger.LogInformation($"Received message: {cr.Message.Value} with key: {cr.Message.Key}");
+                        consumer.Commit(cr);
+                    }
                 }
             }
             catch (OperationCanceledException)

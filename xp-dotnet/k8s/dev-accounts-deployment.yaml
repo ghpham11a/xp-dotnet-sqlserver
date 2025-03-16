@@ -27,6 +27,23 @@ spec:
             secretKeyRef:
               name: xp-dotnet-sqlserver-secrets
               key: SQLSERVER_CONNECTION
+        # This given to us from Helm chart
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: xp-redis
+              key: redis-password
+        - name: KAFKA_SASL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: xp-dotnet-sqlserver-secrets
+              key: KAFKA_SASL_USERNAME
+        # This given to us from Helm chart
+        - name: KAFKA_SASL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: xp-kafka-user-passwords
+              key: client-passwords
         - name: POD_NAME
           valueFrom:
             fieldRef:
