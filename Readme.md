@@ -16,7 +16,7 @@ kubectl run sqlcmd-pod -it --rm --image=mcr.microsoft.com/mssql-tools -- bash
 From the side car, authenticate with sqlcmd in the sql server pod. Password was set in xp-sqlserver/values.yaml
 
 ```sh
-sqlcmd -S 10.111.152.100,1433 -U SA -P "Toughpass1!"
+sqlcmd -S 10.110.104.29,1433 -U SA -P "Toughpass1!"
 ```
 
 Create table and add values
@@ -69,6 +69,8 @@ Install Redis Helm chart
 ```
 helm install xp-redis oci://registry-1.docker.io/bitnamicharts/redis
 ```
+
+This chart creates a Redis secret that will be attached to the deployment
 
 Optional: connect to Redis
 

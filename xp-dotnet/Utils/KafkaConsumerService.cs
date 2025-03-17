@@ -42,6 +42,7 @@ namespace XpDotnetSqlServer.Utils
                         _logger.LogInformation($"Received message: {cr.Message.Value} with key: {cr.Message.Key}");
                         consumer.Commit(cr);
                     }
+                    await Task.Delay(50, stoppingToken);
                 }
             }
             catch (OperationCanceledException)

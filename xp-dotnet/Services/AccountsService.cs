@@ -32,23 +32,23 @@ namespace XpDotnetSqlServer.Services
         public async Task<IEnumerable<Account>> GetAllAsync()
         {
 
-            // Optionally send a test message on startup (to a dedicated health check topic)
-            // try
-            // {
-            //     // var deliveryResult = await _kafkaProducer.ProduceAsync("accounts-topic", "test", "test-value").GetAwaiter().GetResult();
-            //     var deliveryResult = _kafkaProducer.ProduceAsync(
-            //         "accounts-topic",
-            //         "test-key",
-            //         "test-value"
-            //     ).GetAwaiter();
-            //     deliveryResult.GetResult();
-            //     Console.WriteLine($"Kafka producer test message delivered to {deliveryResult}");
-            // }
-            // catch (Exception ex)
-            // {
-            //     Console.WriteLine($"Kafka producer failed to deliver test message: {ex.Message}");
-            //     // Consider handling or throwing exception
-            // }
+            // Optionally send a test message on startup(to a dedicated health check topic)
+            try
+            {
+                // var deliveryResult = await _kafkaProducer.ProduceAsync("accounts-topic", "test", "test-value").GetAwaiter().GetResult();
+                var deliveryResult = _kafkaProducer.ProduceAsync(
+                    "accounts-topic",
+                    "test-key",
+                    "test-value"
+                ).GetAwaiter();
+                deliveryResult.GetResult();
+                Console.WriteLine($"Kafka producer test message delivered to {deliveryResult}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Kafka producer failed to deliver test message: {ex.Message}");
+                // Consider handling or throwing exception
+            }
 
             return await _accountsRepository.GetAllAsync();
         }
